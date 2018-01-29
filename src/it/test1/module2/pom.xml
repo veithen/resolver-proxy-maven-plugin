@@ -36,6 +36,7 @@
                     <execution>
                         <goals>
                             <goal>start</goal>
+                            <goal>stop</goal>
                         </goals>
                     </execution>
                 </executions>

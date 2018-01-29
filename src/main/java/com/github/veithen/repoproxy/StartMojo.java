@@ -68,5 +68,6 @@ public class StartMojo extends AbstractMojo {
             log.debug(String.format("Local repository proxy started on port %s", port));
         }
         project.getProperties().setProperty("localRepositoryProxyPort", String.valueOf(port));
+        getPluginContext().put(Constants.SERVER_KEY, server);
     }
 }
