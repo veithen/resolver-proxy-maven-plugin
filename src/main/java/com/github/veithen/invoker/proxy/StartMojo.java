@@ -1,6 +1,6 @@
 /*-
  * #%L
- * local-repo-proxy-maven-plugin
+ * Resolver Proxy Maven Plugin
  * %%
  * Copyright (C) 2018 Andreas Veithen
  * %%
@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package com.github.veithen.repoproxy;
+package com.github.veithen.invoker.proxy;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -56,7 +56,7 @@ public class StartMojo extends AbstractMojo {
         ServerConnector connector = new ServerConnector(server);
         server.addConnector(connector);
         ServletContextHandler context = new ServletContextHandler(server, "/");
-        ServletHolder servlet = new ServletHolder(new RepoProxyServlet(log, repositorySystem, resolver, session));
+        ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, repositorySystem, resolver, session));
         context.addServlet(servlet, "/*");
         try {
             server.start();

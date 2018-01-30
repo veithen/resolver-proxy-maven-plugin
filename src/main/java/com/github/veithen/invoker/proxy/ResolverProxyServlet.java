@@ -1,6 +1,6 @@
 /*-
  * #%L
- * local-repo-proxy-maven-plugin
+ * Resolver Proxy Maven Plugin
  * %%
  * Copyright (C) 2018 Andreas Veithen
  * %%
@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package com.github.veithen.repoproxy;
+package com.github.veithen.invoker.proxy;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,13 +38,13 @@ import org.apache.maven.shared.artifact.resolve.ArtifactResolverException;
 import org.codehaus.plexus.util.IOUtil;
 
 @SuppressWarnings("serial")
-final class RepoProxyServlet extends HttpServlet {
+final class ResolverProxyServlet extends HttpServlet {
     private final Log log;
     private final RepositorySystem repositorySystem;
     private final ArtifactResolver resolver;
     private final MavenSession session;
 
-    RepoProxyServlet(Log log, RepositorySystem repositorySystem, ArtifactResolver resolver, MavenSession session) {
+    ResolverProxyServlet(Log log, RepositorySystem repositorySystem, ArtifactResolver resolver, MavenSession session) {
         this.log = log;
         this.repositorySystem = repositorySystem;
         this.resolver = resolver;

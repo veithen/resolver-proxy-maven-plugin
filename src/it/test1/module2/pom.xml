@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   #%L
-  local-repo-proxy-maven-plugin
+  Resolver Proxy Maven Plugin
   %%
   Copyright (C) 2018 Andreas Veithen
   %%
@@ -30,7 +30,7 @@
         <plugins>
             <plugin>
                 <groupId>@project.groupId@</groupId>
-                <artifactId>local-repo-proxy-maven-plugin</artifactId>
+                <artifactId>@project.artifactId@</artifactId>
                 <version>@project.version@</version>
                 <executions>
                     <execution>

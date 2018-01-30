@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   #%L
-  local-repo-proxy-maven-plugin
+  Resolver Proxy Maven Plugin
   %%
   Copyright (C) 2018 Andreas Veithen
   %%
@@ -27,7 +27,8 @@
         <version>8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>local-repo-proxy-maven-plugin</artifactId>
+    <groupId>com.github.veithen.invoker</groupId>
+    <artifactId>resolver-proxy-maven-plugin</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
@@ -106,7 +107,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
                 <configuration>
-                    <projectName>local-repo-proxy-maven-plugin</projectName>
+                    <projectName>Resolver Proxy Maven Plugin</projectName>
                     <licenseName>apache_v2</licenseName>
                 </configuration>
             </plugin>

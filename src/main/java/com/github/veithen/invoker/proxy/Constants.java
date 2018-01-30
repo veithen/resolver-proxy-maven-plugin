@@ -1,6 +1,6 @@
 /*-
  * #%L
- * local-repo-proxy-maven-plugin
+ * Resolver Proxy Maven Plugin
  * %%
  * Copyright (C) 2018 Andreas Veithen
  * %%
@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package com.github.veithen.repoproxy;
+package com.github.veithen.invoker.proxy;
 
 final class Constants {
     static final String SERVER_KEY = Constants.class.getPackage().getName() + ".SERVER";
