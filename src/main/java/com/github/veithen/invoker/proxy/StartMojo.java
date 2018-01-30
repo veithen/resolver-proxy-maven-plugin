@@ -64,9 +64,7 @@ public class StartMojo extends AbstractMojo {
             throw new MojoExecutionException(String.format("Failed to start embedded Jetty server: %s", ex.getMessage()), ex);
         }
         int port = connector.getLocalPort();
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Local repository proxy started on port %s", port));
-        }
+        log.info(String.format("Resolver proxy started on port %s", port));
         project.getProperties().setProperty("localRepositoryProxyPort", String.valueOf(port));
         getPluginContext().put(Constants.SERVER_KEY, server);
     }

@@ -37,6 +37,7 @@ public class StopMojo extends AbstractMojo {
             } catch (Exception ex) {
                 throw new MojoExecutionException(String.format("Failed to stop embedded Jetty server: %s", ex.getMessage()), ex);
             }
+            getLog().info("Reolver proxy stopped");
         }
     }
 }
