@@ -32,7 +32,7 @@
     <version>0.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-    <url>https://github.com/veithen/local-repo-proxy-maven-plugin</url>
+    <url>https://github.com/veithen/resolver-proxy-maven-plugin</url>
     <inceptionYear>2018</inceptionYear>
     <licenses>
         <license>
@@ -43,14 +43,14 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/veithen/local-repo-proxy-maven-plugin/tree/master</url>
-        <connection>scm:git:http://github.com/veithen/local-repo-proxy-maven-plugin.git</connection>
-        <developerConnection>scm:git:https://github.com/veithen/local-repo-proxy-maven-plugin.git</developerConnection>
+        <url>https://github.com/veithen/resolver-proxy-maven-plugin/tree/master</url>
+        <connection>scm:git:http://github.com/veithen/resolver-proxy-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://github.com/veithen/resolver-proxy-maven-plugin.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <properties>
-        <github.repository>local-repo-proxy-maven-plugin</github.repository>
+        <github.repository>resolver-proxy-maven-plugin</github.repository>
         <javaVersion>1.7</javaVersion>
         <maven.version>3.0</maven.version>
     </properties>

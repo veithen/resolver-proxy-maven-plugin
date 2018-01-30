@@ -65,7 +65,7 @@ public class StartMojo extends AbstractMojo {
         }
         int port = connector.getLocalPort();
         log.info(String.format("Resolver proxy started on port %s", port));
-        project.getProperties().setProperty("localRepositoryProxyPort", String.valueOf(port));
+        project.getProperties().setProperty("resolverProxyPort", String.valueOf(port));
         getPluginContext().put(Constants.SERVER_KEY, server);
     }
 }
