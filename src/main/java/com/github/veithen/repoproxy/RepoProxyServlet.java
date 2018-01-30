@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.logging.Log;
@@ -104,30 +105,30 @@ final class RepoProxyServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String path = request.getPathInfo();
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Get request for path %s", path));
-        }
         Dependency dependency = null;
         if (path != null && path.startsWith("/")) {
             dependency = parsePath(path.substring(1));
         }
         if (dependency == null) {
-            log.debug("Not found");
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Returning 404 for %s", path));
+            }
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        Artifact dependencyArtifact = repositorySystem.createDependencyArtifact(dependency);
+        File file;
+        try {
+            file = resolver.resolveArtifact(session.getProjectBuildingRequest(), dependencyArtifact).getArtifact().getFile();
+        } catch (ArtifactResolverException ex) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("%s (%s) couldn't be resolved", path, dependencyArtifact), ex);
+            }
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
         if (log.isDebugEnabled()) {
-            log.debug(dependency.toString());
-        }
-        File file;
-        try {
-            file = resolver.resolveArtifact(
-                    session.getProjectBuildingRequest(),
-                    repositorySystem.createDependencyArtifact(dependency)).getArtifact().getFile();
-        } catch (ArtifactResolverException ex) {
-            log.debug(ex);
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
+            log.debug(String.format("%s (%s) resolved to %s", path, dependencyArtifact, file));
         }
         try (FileInputStream in = new FileInputStream(file)) {
             IOUtil.copy(in, response.getOutputStream());

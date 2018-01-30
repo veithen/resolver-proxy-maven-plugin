@@ -97,6 +97,7 @@
                             <goals>
                                 <goal>verify</goal>
                             </goals>
+                            <debug>true</debug>
                         </configuration>
                     </execution>
                 </executions>
