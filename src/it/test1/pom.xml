@@ -25,6 +25,7 @@
     <version>1</version>
     <packaging>pom</packaging>
     <modules>
-        <module>module2</module>
+        <module>hello-world-shared</module>
+        <module>hello-world-maven-plugin</module>
     </modules>
 </project>
