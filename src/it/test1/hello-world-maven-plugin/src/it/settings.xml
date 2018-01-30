@@ -19,20 +19,19 @@
   #L%
   -->
 <settings>
+    <!-- This is necessary because the invoked POM will use snapshot versions
+         but Maven doesn't predefine any snapshot repositories (Only Maven
+         central is predefined and it is configured for releases only). -->
     <profiles>
         <profile>
-            <id>it-repo</id>
+            <id>local-snapshots</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <repositories>
                 <repository>
-                    <id>local.central</id>
+                    <id>local-snapshots</id>
                     <url>http://localhost:@resolverProxyPort@</url>
-                    <releases>
-                        <enabled>true</enabled>
-                        <checksumPolicy>ignore</checksumPolicy>
-                    </releases>
                     <snapshots>
                         <enabled>true</enabled>
                         <checksumPolicy>ignore</checksumPolicy>
@@ -41,12 +40,8 @@
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
-                    <id>local.central</id>
+                    <id>local-snapshots</id>
                     <url>http://localhost:@resolverProxyPort@</url>
-                    <releases>
-                        <enabled>true</enabled>
-                        <checksumPolicy>ignore</checksumPolicy>
-                    </releases>
                     <snapshots>
                         <enabled>true</enabled>
                         <checksumPolicy>ignore</checksumPolicy>
@@ -55,4 +50,14 @@
             </pluginRepositories>
         </profile>
     </profiles>
+    <!-- Make sure that all requests go to the proxy, even if the invoked POM
+         has dependencies that declare additional repositories. -->
+    <mirrors>
+        <mirror>
+            <id>resolver-proxy</id>
+            <name>Resolver Proxy</name>
+            <url>http://localhost:@resolverProxyPort@</url>
+            <mirrorOf>*,!local-snapshots</mirrorOf>
+        </mirror>
+    </mirrors>
 </settings>
