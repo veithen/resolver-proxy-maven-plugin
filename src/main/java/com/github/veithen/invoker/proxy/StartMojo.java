@@ -19,6 +19,10 @@
  */
 package com.github.veithen.invoker.proxy;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Properties;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -31,6 +35,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
+import org.apache.maven.shared.utils.io.FileUtils;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -50,6 +55,12 @@ public class StartMojo extends AbstractMojo {
     @Parameter(property="session", required=true, readonly=true)
     private MavenSession session;
 
+    @Parameter(defaultValue="${project.build.directory}/settings.xml", readonly=true)
+    private File settingsFile;
+
+    @Parameter(defaultValue="${project.build.directory}/it-repo", readonly=true)
+    private File localRepositoryPath;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         Log log = getLog();
         Server server = new Server();
@@ -65,7 +76,21 @@ public class StartMojo extends AbstractMojo {
         }
         int port = connector.getLocalPort();
         log.info(String.format("Resolver proxy started on port %s", port));
-        project.getProperties().setProperty("resolverProxyPort", String.valueOf(port));
+
+        Properties props = project.getProperties();
+        props.setProperty("resolverProxyPort", String.valueOf(port));
+        if (!props.containsKey("invoker.settingsFile")) {
+            try {
+                FileUtils.copyURLToFile(StartMojo.class.getResource("settings.xml"), settingsFile);
+            } catch (IOException ex) {
+                throw new MojoExecutionException(String.format("Failed to create %s: %s", settingsFile, ex.getMessage()), ex);
+            }
+            props.setProperty("invoker.settingsFile", settingsFile.getAbsolutePath());
+        }
+        if (!props.containsKey("invoker.localRepositoryPath")) {
+            props.setProperty("invoker.localRepositoryPath", localRepositoryPath.getAbsolutePath());
+        }
+
         getPluginContext().put(Constants.SERVER_KEY, server);
     }
 }
