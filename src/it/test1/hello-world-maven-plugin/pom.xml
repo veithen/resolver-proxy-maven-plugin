@@ -44,6 +44,12 @@
             <artifactId>hello-world-shared</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.truth</groupId>
+            <artifactId>truth</artifactId>
+            <version>0.39</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -68,6 +74,9 @@
                         <goals>
                             <goal>run</goal>
                         </goals>
+                        <configuration>
+                            <addTestClassPath>true</addTestClassPath>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

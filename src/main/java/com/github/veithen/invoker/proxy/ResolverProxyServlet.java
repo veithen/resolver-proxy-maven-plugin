@@ -22,15 +22,17 @@ package com.github.veithen.invoker.proxy;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.shared.artifact.ArtifactCoordinate;
 import org.apache.maven.shared.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolverException;
@@ -48,7 +50,7 @@ final class ResolverProxyServlet extends HttpServlet {
         this.session = session;
     }
 
-    private ArtifactCoordinate parsePath(String path) {
+    private DefaultArtifactCoordinate parsePath(String path) {
         int fileSlash = path.lastIndexOf('/');
         if (fileSlash == -1) {
             return null;
@@ -87,9 +89,6 @@ final class ResolverProxyServlet extends HttpServlet {
         } else {
             return null;
         }
-        if (extension.endsWith(".md5") || extension.endsWith(".sha1")) {
-            return null;
-        }
         DefaultArtifactCoordinate artifact = new DefaultArtifactCoordinate();
         artifact.setGroupId(groupId);
         artifact.setArtifactId(artifactId);
@@ -102,7 +101,7 @@ final class ResolverProxyServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String path = request.getPathInfo();
-        ArtifactCoordinate artifact = null;
+        DefaultArtifactCoordinate artifact = null;
         if (path != null && path.startsWith("/")) {
             artifact = parsePath(path.substring(1));
         }
@@ -113,6 +112,21 @@ final class ResolverProxyServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
+        
+        // Handle checksum files in a special way. ArtifactResolver would be able to resolve them for artifacts
+        // downloaded from a remote repository, but for artifacts from the reactor it will trigger an error. It
+        // may also do unnecessary attempts to download them from remote repositories.
+        String extension = artifact.getExtension();
+        String checksumType = null;
+        int idx = extension.lastIndexOf('.');
+        if (idx != -1) {
+            String suffix = extension.substring(idx+1);
+            if (suffix.equals("md5") || suffix.equals("sha1")) {
+                artifact.setExtension(extension.substring(0, idx));
+                checksumType = suffix;
+            }
+        }
+        
         File file;
         try {
             file = resolver.resolveArtifact(session.getProjectBuildingRequest(), artifact).getArtifact().getFile();
@@ -123,8 +137,39 @@ final class ResolverProxyServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
+        
+        if (checksumType != null) {
+            File checksumFile = new File(file.getParent(), String.format("%s.%s", file.getName(), checksumType));
+            if (checksumFile.exists()) {
+                // Just continue and send the existing checksum file.
+                file = checksumFile;
+            } else {
+                MessageDigest digest;
+                try {
+                    digest = MessageDigest.getInstance(checksumType);
+                } catch (NoSuchAlgorithmException ex) {
+                    log.error(ex);
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    return;
+                }
+                byte[] buffer = new byte[4096];
+                try (FileInputStream in = new FileInputStream(file)) {
+                    int c;
+                    while ((c = in.read(buffer)) != -1) {
+                        digest.update(buffer, 0, c);
+                    }
+                }
+                String checksum = DatatypeConverter.printHexBinary(digest.digest());
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("%s served by computing checksum of %s (%s): %s", path, file, artifact, checksum));
+                }
+                response.getWriter().write(checksum);
+                return;
+            }
+        }
+        
         if (log.isDebugEnabled()) {
-            log.debug(String.format("%s (%s) resolved to %s", path, artifact, file));
+            log.debug(String.format("%s (%s, checksumType=%s) resolved to %s", path, artifact, checksumType, file));
         }
         try (FileInputStream in = new FileInputStream(file)) {
             IOUtil.copy(in, response.getOutputStream());
