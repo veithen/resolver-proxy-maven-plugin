@@ -28,11 +28,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.shared.artifact.ArtifactCoordinate;
+import org.apache.maven.shared.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolverException;
 import org.codehaus.plexus.util.IOUtil;
@@ -40,18 +39,16 @@ import org.codehaus.plexus.util.IOUtil;
 @SuppressWarnings("serial")
 final class ResolverProxyServlet extends HttpServlet {
     private final Log log;
-    private final RepositorySystem repositorySystem;
     private final ArtifactResolver resolver;
     private final MavenSession session;
 
-    ResolverProxyServlet(Log log, RepositorySystem repositorySystem, ArtifactResolver resolver, MavenSession session) {
+    ResolverProxyServlet(Log log, ArtifactResolver resolver, MavenSession session) {
         this.log = log;
-        this.repositorySystem = repositorySystem;
         this.resolver = resolver;
         this.session = session;
     }
 
-    private Dependency parsePath(String path) {
+    private ArtifactCoordinate parsePath(String path) {
         int fileSlash = path.lastIndexOf('/');
         if (fileSlash == -1) {
             return null;
@@ -76,59 +73,58 @@ final class ResolverProxyServlet extends HttpServlet {
             return null;
         }
         String classifier;
-        String type;
+        String extension;
         if (remainder.charAt(0) == '-') {
             int dot = remainder.indexOf('.');
             if (dot == -1) {
                 return null;
             }
             classifier = remainder.substring(1, dot);
-            type = remainder.substring(dot+1);
+            extension = remainder.substring(dot+1);
         } else if (remainder.charAt(0) == '.') {
             classifier = null;
-            type = remainder.substring(1);
+            extension = remainder.substring(1);
         } else {
             return null;
         }
-        if (type.endsWith(".md5") || type.endsWith(".sha1")) {
+        if (extension.endsWith(".md5") || extension.endsWith(".sha1")) {
             return null;
         }
-        Dependency dependency = new Dependency();
-        dependency.setGroupId(groupId);
-        dependency.setArtifactId(artifactId);
-        dependency.setVersion(version);
-        dependency.setClassifier(classifier);
-        dependency.setType(type);
-        return dependency;
+        DefaultArtifactCoordinate artifact = new DefaultArtifactCoordinate();
+        artifact.setGroupId(groupId);
+        artifact.setArtifactId(artifactId);
+        artifact.setVersion(version);
+        artifact.setClassifier(classifier);
+        artifact.setExtension(extension);
+        return artifact;
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String path = request.getPathInfo();
-        Dependency dependency = null;
+        ArtifactCoordinate artifact = null;
         if (path != null && path.startsWith("/")) {
-            dependency = parsePath(path.substring(1));
+            artifact = parsePath(path.substring(1));
         }
-        if (dependency == null) {
+        if (artifact == null) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Returning 404 for %s", path));
             }
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        Artifact dependencyArtifact = repositorySystem.createDependencyArtifact(dependency);
         File file;
         try {
-            file = resolver.resolveArtifact(session.getProjectBuildingRequest(), dependencyArtifact).getArtifact().getFile();
+            file = resolver.resolveArtifact(session.getProjectBuildingRequest(), artifact).getArtifact().getFile();
         } catch (ArtifactResolverException ex) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("%s (%s) couldn't be resolved", path, dependencyArtifact), ex);
+                log.debug(String.format("%s (%s) couldn't be resolved", path, artifact), ex);
             }
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
         if (log.isDebugEnabled()) {
-            log.debug(String.format("%s (%s) resolved to %s", path, dependencyArtifact, file));
+            log.debug(String.format("%s (%s) resolved to %s", path, artifact, file));
         }
         try (FileInputStream in = new FileInputStream(file)) {
             IOUtil.copy(in, response.getOutputStream());

@@ -33,7 +33,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.repository.RepositorySystem;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.eclipse.jetty.server.Server;
@@ -43,9 +42,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 
 @Mojo(name="start", defaultPhase=LifecyclePhase.PRE_INTEGRATION_TEST, threadSafe=true)
 public class StartMojo extends AbstractMojo {
-    @Component
-    private RepositorySystem repositorySystem;
-
     @Component
     private ArtifactResolver resolver;
 
@@ -67,7 +63,7 @@ public class StartMojo extends AbstractMojo {
         ServerConnector connector = new ServerConnector(server);
         server.addConnector(connector);
         ServletContextHandler context = new ServletContextHandler(server, "/");
-        ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, repositorySystem, resolver, session));
+        ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, resolver, session));
         context.addServlet(servlet, "/*");
         try {
             server.start();
