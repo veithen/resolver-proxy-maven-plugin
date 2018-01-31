@@ -50,7 +50,7 @@ final class ResolverProxyServlet extends HttpServlet {
         this.session = session;
     }
 
-    private DefaultArtifactCoordinate parsePath(String path) {
+    private DefaultArtifactCoordinate parseArtifactRequest(String path) {
         int fileSlash = path.lastIndexOf('/');
         if (fileSlash == -1) {
             return null;
@@ -101,18 +101,27 @@ final class ResolverProxyServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String path = request.getPathInfo();
-        DefaultArtifactCoordinate artifact = null;
         if (path != null && path.startsWith("/")) {
-            artifact = parsePath(path.substring(1));
+            process(path.substring(1), response);
+        } else {
+            log.error(String.format("Expected pathInfo starting with '/'; was: %s", path));
         }
-        if (artifact == null) {
+    }
+
+    private void process(String path, HttpServletResponse response) throws IOException {
+        DefaultArtifactCoordinate artifact = parseArtifactRequest(path);
+        if (artifact != null) {
+            processArtifactRequest(path, artifact, response);
+        } else {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Returning 404 for %s", path));
             }
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        
+    }
+
+    private void processArtifactRequest(String path, DefaultArtifactCoordinate artifact, HttpServletResponse response) throws IOException {
         // Handle checksum files in a special way. ArtifactResolver would be able to resolve them for artifacts
         // downloaded from a remote repository, but for artifacts from the reactor it will trigger an error. It
         // may also do unnecessary attempts to download them from remote repositories.
