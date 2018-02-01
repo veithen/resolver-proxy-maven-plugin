@@ -63,7 +63,7 @@ public class StartMojo extends AbstractMojo {
         ServerConnector connector = new ServerConnector(server);
         server.addConnector(connector);
         ServletContextHandler context = new ServletContextHandler(server, "/");
-        ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, resolver, session));
+        ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, resolver, session, project.getPluginManagement()));
         context.addServlet(servlet, "/*");
         try {
             server.start();

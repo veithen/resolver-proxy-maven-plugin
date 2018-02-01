@@ -24,14 +24,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginManagement;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
@@ -43,11 +49,13 @@ final class ResolverProxyServlet extends HttpServlet {
     private final Log log;
     private final ArtifactResolver resolver;
     private final MavenSession session;
+    private final PluginManagement pluginManagement;
 
-    ResolverProxyServlet(Log log, ArtifactResolver resolver, MavenSession session) {
+    ResolverProxyServlet(Log log, ArtifactResolver resolver, MavenSession session, PluginManagement pluginManagement) {
         this.log = log;
         this.resolver = resolver;
         this.session = session;
+        this.pluginManagement = pluginManagement;
     }
 
     private DefaultArtifactCoordinate parseArtifactRequest(String path) {
@@ -108,17 +116,31 @@ final class ResolverProxyServlet extends HttpServlet {
         }
     }
 
-    private void process(String path, HttpServletResponse response) throws IOException {
-        DefaultArtifactCoordinate artifact = parseArtifactRequest(path);
-        if (artifact != null) {
-            processArtifactRequest(path, artifact, response);
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Returning 404 for %s", path));
+    private void process(String path, HttpServletResponse response) throws IOException, ServletException {
+        if (path.endsWith("/maven-metadata.xml")) {
+            int fileSlash = path.lastIndexOf('/');
+            int artifactSlash = path.lastIndexOf('/', fileSlash-1);
+            if (artifactSlash != -1) {
+                processMetadataRequest(
+                        path,
+                        path.substring(0, artifactSlash).replace('/', '.'),
+                        path.substring(artifactSlash+1, fileSlash),
+                        response);
+                return;
             }
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
+        } else {
+            DefaultArtifactCoordinate artifact = parseArtifactRequest(path);
+            if (artifact != null) {
+                processArtifactRequest(path, artifact, response);
+                return;
+            }
         }
+        
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Returning 404 for %s", path));
+        }
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return;
     }
 
     private void processArtifactRequest(String path, DefaultArtifactCoordinate artifact, HttpServletResponse response) throws IOException {
@@ -182,6 +204,49 @@ final class ResolverProxyServlet extends HttpServlet {
         }
         try (FileInputStream in = new FileInputStream(file)) {
             IOUtil.copy(in, response.getOutputStream());
+        }
+    }
+
+    private void processMetadataRequest(String path, String groupId, String artifactId, HttpServletResponse response) throws IOException, ServletException {
+        String key = Plugin.constructKey(groupId, artifactId);
+        Map<String,Plugin> pluginMap = pluginManagement.getPluginsAsMap();
+        Plugin plugin = pluginMap.get(key);
+        if (plugin != null) {
+            String version = plugin.getVersion();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("%s (%s) served by generating metadata for version %s", path, key, version));
+            }
+            try {
+                XMLStreamWriter writer = XMLOutputFactory.newFactory().createXMLStreamWriter(response.getOutputStream());
+                writer.writeStartDocument("utf-8", "1.0");
+                writer.writeStartElement("metadata");
+                writer.writeStartElement("groupId");
+                writer.writeCharacters(groupId);
+                writer.writeEndElement();
+                writer.writeStartElement("artifactId");
+                writer.writeCharacters(artifactId);
+                writer.writeEndElement();
+                writer.writeStartElement("versioning");
+                writer.writeStartElement("latest");
+                writer.writeCharacters(version);
+                writer.writeEndElement();
+                writer.writeStartElement("versions");
+                writer.writeStartElement("version");
+                writer.writeCharacters(version);
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndDocument();
+                writer.flush();
+            } catch (XMLStreamException ex) {
+                throw new ServletException(ex);
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Returning 404 for %s: no pluginManagement for %s (available: %s)", path, key, pluginMap.keySet()));
+            }
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }
