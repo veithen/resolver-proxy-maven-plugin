@@ -57,7 +57,7 @@
             <id>resolver-proxy</id>
             <name>Resolver Proxy</name>
             <url>http://localhost:@resolverProxyPort@</url>
-            <mirrorOf>*,!local-snapshots</mirrorOf>
+            <mirrorOf>external:*</mirrorOf>
         </mirror>
     </mirrors>
 </settings>
