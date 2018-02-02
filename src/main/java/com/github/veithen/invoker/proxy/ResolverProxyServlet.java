@@ -22,6 +22,8 @@ package com.github.veithen.invoker.proxy;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel.MapMode;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -42,7 +44,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolverException;
-import org.codehaus.plexus.util.IOUtil;
+import org.eclipse.jetty.server.HttpOutput;
 
 @SuppressWarnings("serial")
 final class ResolverProxyServlet extends HttpServlet {
@@ -202,8 +204,10 @@ final class ResolverProxyServlet extends HttpServlet {
         if (log.isDebugEnabled()) {
             log.debug(String.format("%s (%s, checksumType=%s) resolved to %s", path, artifact, checksumType, file));
         }
-        try (FileInputStream in = new FileInputStream(file)) {
-            IOUtil.copy(in, response.getOutputStream());
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            long size = raf.length();
+            response.setContentLengthLong(size);
+            ((HttpOutput)response.getOutputStream()).sendContent(raf.getChannel().map(MapMode.READ_ONLY, 0, size));
         }
     }
 
