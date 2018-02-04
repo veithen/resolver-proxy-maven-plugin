@@ -19,21 +19,25 @@
   #L%
   -->
 <settings>
-    <!-- This is necessary because the invoked POM will use snapshot versions
-         but Maven doesn't predefine any snapshot repositories (Only Maven
-         central is predefined and it is configured for releases only). -->
+    <!-- This profile is needed for two reasons:
+          * Maven doesn't predefine any snapshot repositories (Only Maven
+            central is predefined and it is configured for releases only).
+            If the invoked POM uses snapshot versions (which it generally
+            does), then at least one snapshot repository needs to be defined.
+          * To avoid unnecessary checksum validation. -->
     <profiles>
         <profile>
-            <id>local-snapshots</id>
+            <id>resolver-proxy</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <repositories>
                 <repository>
-                    <id>local-snapshots</id>
+                    <id>resolver-proxy</id>
                     <url>http://localhost:@resolverProxyPort@</url>
                     <releases>
-                        <enabled>false</enabled>
+                        <enabled>true</enabled>
+                        <checksumPolicy>ignore</checksumPolicy>
                     </releases>
                     <snapshots>
                         <enabled>true</enabled>
@@ -43,10 +47,11 @@
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
-                    <id>local-snapshots</id>
+                    <id>resolver-proxy</id>
                     <url>http://localhost:@resolverProxyPort@</url>
                     <releases>
-                        <enabled>false</enabled>
+                        <enabled>true</enabled>
+                        <checksumPolicy>ignore</checksumPolicy>
                     </releases>
                     <snapshots>
                         <enabled>true</enabled>
