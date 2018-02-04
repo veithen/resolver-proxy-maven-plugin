@@ -32,6 +32,9 @@
                 <repository>
                     <id>local-snapshots</id>
                     <url>http://localhost:@resolverProxyPort@</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
                     <snapshots>
                         <enabled>true</enabled>
                         <checksumPolicy>ignore</checksumPolicy>
@@ -42,6 +45,9 @@
                 <pluginRepository>
                     <id>local-snapshots</id>
                     <url>http://localhost:@resolverProxyPort@</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
                     <snapshots>
                         <enabled>true</enabled>
                         <checksumPolicy>ignore</checksumPolicy>
