@@ -51,6 +51,12 @@ public class StartMojo extends AbstractMojo {
     @Parameter(property="session", required=true, readonly=true)
     private MavenSession session;
 
+    /**
+     * The HTTP port to use for the resolver proxy; for debugging purposes only.
+     */
+    @Parameter(property="resolverProxyPort", readonly=true)
+    private int resolverProxyPort = -1;
+
     @Parameter(defaultValue="${project.build.directory}/settings.xml", readonly=true)
     private File settingsFile;
 
@@ -61,6 +67,9 @@ public class StartMojo extends AbstractMojo {
         Log log = getLog();
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
+        if (resolverProxyPort != -1) {
+            connector.setPort(resolverProxyPort);
+        }
         server.addConnector(connector);
         ServletContextHandler context = new ServletContextHandler(server, "/");
         ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, resolver, session, project.getPluginManagement()));
