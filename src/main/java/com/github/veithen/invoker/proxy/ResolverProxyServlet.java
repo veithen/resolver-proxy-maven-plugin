@@ -110,10 +110,20 @@ final class ResolverProxyServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        process(request, response, false);
+    }
+
+    
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        process(request, response, true);
+    }
+
+    private void process(HttpServletRequest request, HttpServletResponse response, boolean head) throws ServletException, IOException {
         String path = request.getPathInfo();
         if (path != null && path.startsWith("/")) {
             try {
-                process(path.substring(1), response);
+                process(path.substring(1), response, head);
             } catch (ServletException | IOException ex) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Error processing request for %s", path), ex);
@@ -125,7 +135,7 @@ final class ResolverProxyServlet extends HttpServlet {
         }
     }
 
-    private void process(String path, HttpServletResponse response) throws IOException, ServletException {
+    private void process(String path, HttpServletResponse response, boolean head) throws IOException, ServletException {
         if (path.endsWith("/maven-metadata.xml")) {
             int fileSlash = path.lastIndexOf('/');
             int artifactSlash = path.lastIndexOf('/', fileSlash-1);
@@ -134,13 +144,14 @@ final class ResolverProxyServlet extends HttpServlet {
                         path,
                         path.substring(0, artifactSlash).replace('/', '.'),
                         path.substring(artifactSlash+1, fileSlash),
-                        response);
+                        response,
+                        head);
                 return;
             }
         } else {
             DefaultArtifactCoordinate artifact = parseArtifactRequest(path);
             if (artifact != null) {
-                processArtifactRequest(path, artifact, response);
+                processArtifactRequest(path, artifact, response, head);
                 return;
             }
         }
@@ -152,7 +163,7 @@ final class ResolverProxyServlet extends HttpServlet {
         return;
     }
 
-    private void processArtifactRequest(String path, DefaultArtifactCoordinate artifact, HttpServletResponse response) throws IOException {
+    private void processArtifactRequest(String path, DefaultArtifactCoordinate artifact, HttpServletResponse response, boolean head) throws IOException {
         // Handle checksum files in a special way. ArtifactResolver would be able to resolve them for artifacts
         // downloaded from a remote repository, but for artifacts from the reactor it will trigger an error. It
         // may also do unnecessary attempts to download them from remote repositories.
@@ -214,11 +225,13 @@ final class ResolverProxyServlet extends HttpServlet {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             long size = raf.length();
             response.setContentLengthLong(size);
-            ((HttpOutput)response.getOutputStream()).sendContent(raf.getChannel().map(MapMode.READ_ONLY, 0, size));
+            if (!head) {
+                ((HttpOutput)response.getOutputStream()).sendContent(raf.getChannel().map(MapMode.READ_ONLY, 0, size));
+            }
         }
     }
 
-    private void processMetadataRequest(String path, String groupId, String artifactId, HttpServletResponse response) throws IOException, ServletException {
+    private void processMetadataRequest(String path, String groupId, String artifactId, HttpServletResponse response, boolean head) throws IOException, ServletException {
         String key = Plugin.constructKey(groupId, artifactId);
         Map<String,Plugin> pluginMap = pluginManagement.getPluginsAsMap();
         Plugin plugin = pluginMap.get(key);
@@ -227,31 +240,33 @@ final class ResolverProxyServlet extends HttpServlet {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("%s (%s) served by generating metadata for version %s", path, key, version));
             }
-            try {
-                XMLStreamWriter writer = XMLOutputFactory.newFactory().createXMLStreamWriter(response.getOutputStream());
-                writer.writeStartDocument("utf-8", "1.0");
-                writer.writeStartElement("metadata");
-                writer.writeStartElement("groupId");
-                writer.writeCharacters(groupId);
-                writer.writeEndElement();
-                writer.writeStartElement("artifactId");
-                writer.writeCharacters(artifactId);
-                writer.writeEndElement();
-                writer.writeStartElement("versioning");
-                writer.writeStartElement("latest");
-                writer.writeCharacters(version);
-                writer.writeEndElement();
-                writer.writeStartElement("versions");
-                writer.writeStartElement("version");
-                writer.writeCharacters(version);
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndElement();
-                writer.writeEndDocument();
-                writer.flush();
-            } catch (XMLStreamException ex) {
-                throw new ServletException(ex);
+            if (!head) {
+                try {
+                    XMLStreamWriter writer = XMLOutputFactory.newFactory().createXMLStreamWriter(response.getOutputStream());
+                    writer.writeStartDocument("utf-8", "1.0");
+                    writer.writeStartElement("metadata");
+                    writer.writeStartElement("groupId");
+                    writer.writeCharacters(groupId);
+                    writer.writeEndElement();
+                    writer.writeStartElement("artifactId");
+                    writer.writeCharacters(artifactId);
+                    writer.writeEndElement();
+                    writer.writeStartElement("versioning");
+                    writer.writeStartElement("latest");
+                    writer.writeCharacters(version);
+                    writer.writeEndElement();
+                    writer.writeStartElement("versions");
+                    writer.writeStartElement("version");
+                    writer.writeCharacters(version);
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                    writer.writeEndDocument();
+                    writer.flush();
+                } catch (XMLStreamException ex) {
+                    throw new ServletException(ex);
+                }
             }
         } else {
             if (log.isDebugEnabled()) {
