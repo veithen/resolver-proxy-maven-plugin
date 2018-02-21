@@ -112,7 +112,14 @@ final class ResolverProxyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String path = request.getPathInfo();
         if (path != null && path.startsWith("/")) {
-            process(path.substring(1), response);
+            try {
+                process(path.substring(1), response);
+            } catch (ServletException | IOException ex) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Error processing request for %s", path), ex);
+                }
+                throw ex;
+            }
         } else {
             log.error(String.format("Expected pathInfo starting with '/'; was: %s", path));
         }
