@@ -2,4 +2,20 @@ dist: trusty
 language: java
 jdk:
   - openjdk8
-script: "mvn verify"
+  - openjdk9
+  - openjdk10
+  - openjdk11
+before_install:
+  - if [ -e $JAVA_HOME/lib/security/cacerts ]; then ln -sf /etc/ssl/certs/java/cacerts $JAVA_HOME/lib/security/cacerts; fi
+install: true
+script: mvn -B -U -Prelease -Dgpg.skip=true verify
+jobs:
+  include:
+    - if: repo = "veithen/resolver-proxy-maven-plugin" AND branch = master AND type = push
+      stage: deploy
+      script: mvn -B -s .travis-settings.xml -Prelease -Dgpg.skip=true -DskipTests=true deploy
+      env:
+        - secure: "KbSZiMRUCwKd7dP3hnHh6UlhOzHItQ/IMfgrDRe2QNow1s9PS15q1s50H8rsn7JDuo9uYAnb6aoBdWrTvOjpXcDTsDKI6J5S/rwn0a3NCjeZS0bBD/QztOTP6NOq3+EczyNXFOU6g5mmwGQGJw0G1fbM2ZDLkr8ntXd4cEt3s1f1Ch8QnQ03mR9ofDioWoruct0x1Ychhwc3pn1YchRlyg3NcdwEbRb3rclAI0GJg5BUllPvDwP0NU8cJcC6/+f1+h/5KlcPrV22XyLZSbXqB74l+fIK2QGvJkszpRJHtNp7ghB/yfWGwBdkuIUMoNi6J6YytPm8PuujlI/OadCboQIx/pEYmoEwdjY9aA7YY/W3TS06zWdAdW3KT/6+HEmoZ3XCtcD35S7nAy8jsfDZpaUb2LC03hiamPRRkuHLhHsE3EpMb9Fn0pj16R0ezMCOyWDyfhLW8kYJU+MWSfcqnCrIo0KANxx5JcUY4owgIrbob5MFfKbN/dlHDm5SZagvXkf9Zeapmo4wekjlf5XWWlK7r9/vlgFPJ2jsYiC09lQ1maQGKaJogWR3BOXx7WFJSxIdt7x0LXnw9oRt7/MEAZjvhvSsYZzAXVyQC9EdZy6U1z2NEj2AOZSxn1GsKUlgehEQJeYBYDdVTPmwpXMMCl6ZIlvsegseS5bimVjtDC8="
+cache:
+  directories:
+    - $HOME/.m2
