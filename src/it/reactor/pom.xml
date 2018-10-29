@@ -28,4 +28,14 @@
         <module>hello-world-shared</module>
         <module>hello-world-maven-plugin</module>
     </modules>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
