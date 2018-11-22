@@ -36,6 +36,7 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginManagement;
@@ -47,18 +48,6 @@ import org.eclipse.jetty.server.HttpOutput;
 
 @SuppressWarnings("serial")
 final class ResolverProxyServlet extends HttpServlet {
-    private static final char[] HEX_CHARS;
-    
-    static {
-        HEX_CHARS = new char[16];
-        for (int i = 0; i < 10; i++) {
-            HEX_CHARS[i] = (char)('0' + i);
-        }
-        for (int i = 0; i < 6; i++) {
-            HEX_CHARS[10+i] = (char)('A' + i);
-        }
-    }
-
     private final Log log;
     private final ArtifactResolver resolver;
     private final MavenSession session;
@@ -221,14 +210,7 @@ final class ResolverProxyServlet extends HttpServlet {
                         digest.update(buffer, 0, c);
                     }
                 }
-                byte[] digestData = digest.digest();
-                StringBuilder sb = new StringBuilder(digestData.length * 2);
-                for (byte b : digestData) {
-                    sb.append(HEX_CHARS[(b >> 4) & 0xF]);
-                    sb.append(HEX_CHARS[b & 0xF]);
-                }
-                
-                String checksum = sb.toString();
+                String checksum = Hex.encodeHexString(digest.digest(), false);
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("%s served by computing checksum of %s (%s): %s", path, file, artifact, checksum));
                 }
