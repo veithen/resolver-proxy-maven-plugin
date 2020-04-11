@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -35,8 +38,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.utils.io.FileUtils;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
@@ -64,7 +69,7 @@ public class StartMojo extends AbstractMojo {
     private File localRepositoryPath;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Log log = getLog();
+        final Log log = getLog();
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         if (resolverProxyPort != -1) {
@@ -74,6 +79,17 @@ public class StartMojo extends AbstractMojo {
         ServletContextHandler context = new ServletContextHandler(server, "/");
         ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, resolver, session, project.getPluginManagement()));
         context.addServlet(servlet, "/*");
+        context.setErrorHandler(new ErrorHandler() {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request,
+                    HttpServletResponse response) throws IOException {
+                Throwable exception = (Throwable)request.getAttribute("javax.servlet.error.exception");
+                if (exception != null) {
+                    log.error("An error occurred in the resolver proxy", exception);
+                }
+                super.handle(target, baseRequest, request, response);
+            }
+        });
         try {
             server.start();
         } catch (Exception ex) {
