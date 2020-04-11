@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.github.veithen</groupId>
         <artifactId>parent</artifactId>
-        <version>14</version>
+        <version>18</version>
     </parent>
 
     <groupId>com.github.veithen.invoker</groupId>
@@ -124,6 +124,13 @@
                 <configuration>
                     <projectName>Resolver Proxy Maven Plugin</projectName>
                     <licenseName>apache_v2</licenseName>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.veithen.maven</groupId>
+                <artifactId>hermetic-maven-plugin</artifactId>
+                <configuration>
+                    <allowExec>true</allowExec>
                 </configuration>
             </plugin>
         </plugins>
