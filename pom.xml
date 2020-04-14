@@ -27,7 +27,7 @@
         <version>19-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.github.veithen.invoker</groupId>
+    <groupId>com.github.veithen.maven</groupId>
     <artifactId>resolver-proxy-maven-plugin</artifactId>
     <version>0.2-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>

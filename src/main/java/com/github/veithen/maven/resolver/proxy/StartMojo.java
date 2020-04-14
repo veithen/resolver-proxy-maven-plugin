@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package com.github.veithen.invoker.proxy;
+package com.github.veithen.maven.resolver.proxy;
 
 import java.io.File;
 import java.io.IOException;

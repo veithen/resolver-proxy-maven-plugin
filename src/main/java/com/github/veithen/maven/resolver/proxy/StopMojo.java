@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package com.github.veithen.invoker.proxy;
+package com.github.veithen.maven.resolver.proxy;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;

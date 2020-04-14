@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package com.github.veithen.invoker.proxy;
+package com.github.veithen.maven.resolver.proxy;
 
 final class Constants {
     static final String SERVER_KEY = Constants.class.getPackage().getName() + ".SERVER";
