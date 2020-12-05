@@ -14,7 +14,7 @@ With resolver-proxy-maven-plugin, all remote artifact resolution in the invoked 
 A minimal configuration would look as follows:
 
     <plugin>
-        <groupId>com.github.veithen.invoker</groupId>
+        <groupId>com.github.veithen.maven</groupId>
         <artifactId>resolver-proxy-maven-plugin</artifactId>
         <executions>
             <execution>
@@ -36,7 +36,7 @@ A minimal configuration would look as follows:
         </executions>
     </plugin>
 
-The resolver-proxy:start goal will automatically configure maven-invoker-plugin to use a dedicated local repository and supply it with an appropriate `settings.xml` file, so that no further configuration is required. The settings file in question is [src/main/resources/com/github/veithen/invoker/proxy/settings.xml](src/main/resources/com/github/veithen/invoker/proxy/settings.xml); use that file as a template if you need to customize other Maven settings.
+The resolver-proxy:start goal will automatically configure maven-invoker-plugin to use a dedicated local repository and supply it with an appropriate `settings.xml` file, so that no further configuration is required. The settings file in question is [src/main/resources/com/github/veithen/maven/resolver/proxy/settings.xml](src/main/resources/com/github/veithen/maven/resolver/proxy/settings.xml); use that file as a template if you need to customize other Maven settings.
 
 resolver-proxy-maven-plugin has the following limitations:
 
