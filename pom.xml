@@ -51,7 +51,7 @@
 
     <properties>
         <github.repository>resolver-proxy-maven-plugin</github.repository>
-        <javaVersion>1.7</javaVersion>
+        <javaVersion>1.8</javaVersion>
         <maven.version>3.6.3</maven.version>
     </properties>
 
