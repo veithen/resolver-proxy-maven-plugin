@@ -5,7 +5,15 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "maven"
+    directory: "/src/it/bundle"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "maven"
     directory: "/src/it/bundle/src/it/test"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "maven"
+    directory: "/src/it/reactor"
     schedule:
       interval: "daily"
   - package-ecosystem: "maven"
