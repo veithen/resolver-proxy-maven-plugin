@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -82,7 +83,7 @@ public class StartMojo extends AbstractMojo {
         context.setErrorHandler(new ErrorHandler() {
             @Override
             public void handle(String target, Request baseRequest, HttpServletRequest request,
-                    HttpServletResponse response) throws IOException {
+                    HttpServletResponse response) throws IOException, ServletException {
                 Throwable exception = (Throwable)request.getAttribute("javax.servlet.error.exception");
                 if (exception != null) {
                     log.error("An error occurred in the resolver proxy", exception);
