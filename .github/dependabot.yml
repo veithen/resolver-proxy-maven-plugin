@@ -4,3 +4,11 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+  - package-ecosystem: "maven"
+    directory: "/src/it/bundle/src/it/test"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "maven"
+    directory: "/src/it/reactor/hello-world-maven-plugin"
+    schedule:
+      interval: "daily"
