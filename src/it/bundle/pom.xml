@@ -72,6 +72,7 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
+                            <goals>clean verify -e</goals>
                             <addTestClassPath>true</addTestClassPath>
                         </configuration>
                     </execution>
