@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,27 +46,24 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-@Mojo(name="start", defaultPhase=LifecyclePhase.PRE_INTEGRATION_TEST, threadSafe=true)
+@Mojo(name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST, threadSafe = true)
 public class StartMojo extends AbstractMojo {
-    @Component
-    private ArtifactResolver resolver;
+    @Component private ArtifactResolver resolver;
 
-    @Parameter(property="project", required=true, readonly=true)
+    @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
 
-    @Parameter(property="session", required=true, readonly=true)
+    @Parameter(property = "session", required = true, readonly = true)
     private MavenSession session;
 
-    /**
-     * The HTTP port to use for the resolver proxy; for debugging purposes only.
-     */
-    @Parameter(property="resolverProxyPort", readonly=true)
+    /** The HTTP port to use for the resolver proxy; for debugging purposes only. */
+    @Parameter(property = "resolverProxyPort", readonly = true)
     private int resolverProxyPort = -1;
 
-    @Parameter(defaultValue="${project.build.directory}/settings.xml", readonly=true)
+    @Parameter(defaultValue = "${project.build.directory}/settings.xml", readonly = true)
     private File settingsFile;
 
-    @Parameter(defaultValue="${project.build.directory}/it-repo", readonly=true)
+    @Parameter(defaultValue = "${project.build.directory}/it-repo", readonly = true)
     private File localRepositoryPath;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -78,23 +75,34 @@ public class StartMojo extends AbstractMojo {
         }
         server.addConnector(connector);
         ServletContextHandler context = new ServletContextHandler(server, "/");
-        ServletHolder servlet = new ServletHolder(new ResolverProxyServlet(log, resolver, session, project.getPluginManagement()));
+        ServletHolder servlet =
+                new ServletHolder(
+                        new ResolverProxyServlet(
+                                log, resolver, session, project.getPluginManagement()));
         context.addServlet(servlet, "/*");
-        context.setErrorHandler(new ErrorHandler() {
-            @Override
-            public void handle(String target, Request baseRequest, HttpServletRequest request,
-                    HttpServletResponse response) throws IOException, ServletException {
-                Throwable exception = (Throwable)request.getAttribute("javax.servlet.error.exception");
-                if (exception != null) {
-                    log.error("An error occurred in the resolver proxy", exception);
-                }
-                super.handle(target, baseRequest, request, response);
-            }
-        });
+        context.setErrorHandler(
+                new ErrorHandler() {
+                    @Override
+                    public void handle(
+                            String target,
+                            Request baseRequest,
+                            HttpServletRequest request,
+                            HttpServletResponse response)
+                            throws IOException, ServletException {
+                        Throwable exception =
+                                (Throwable) request.getAttribute("javax.servlet.error.exception");
+                        if (exception != null) {
+                            log.error("An error occurred in the resolver proxy", exception);
+                        }
+                        super.handle(target, baseRequest, request, response);
+                    }
+                });
         try {
             server.start();
         } catch (Exception ex) {
-            throw new MojoExecutionException(String.format("Failed to start embedded Jetty server: %s", ex.getMessage()), ex);
+            throw new MojoExecutionException(
+                    String.format("Failed to start embedded Jetty server: %s", ex.getMessage()),
+                    ex);
         }
         int port = connector.getLocalPort();
         log.info(String.format("Resolver proxy started on port %s", port));
@@ -105,7 +113,9 @@ public class StartMojo extends AbstractMojo {
             try {
                 FileUtils.copyURLToFile(StartMojo.class.getResource("settings.xml"), settingsFile);
             } catch (IOException ex) {
-                throw new MojoExecutionException(String.format("Failed to create %s: %s", settingsFile, ex.getMessage()), ex);
+                throw new MojoExecutionException(
+                        String.format("Failed to create %s: %s", settingsFile, ex.getMessage()),
+                        ex);
             }
             props.setProperty("invoker.settingsFile", settingsFile.getAbsolutePath());
         }

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,7 +53,11 @@ final class ResolverProxyServlet extends HttpServlet {
     private final MavenSession session;
     private final PluginManagement pluginManagement;
 
-    ResolverProxyServlet(Log log, ArtifactResolver resolver, MavenSession session, PluginManagement pluginManagement) {
+    ResolverProxyServlet(
+            Log log,
+            ArtifactResolver resolver,
+            MavenSession session,
+            PluginManagement pluginManagement) {
         this.log = log;
         this.resolver = resolver;
         this.session = session;
@@ -65,22 +69,26 @@ final class ResolverProxyServlet extends HttpServlet {
         if (fileSlash == -1) {
             return null;
         }
-        int versionSlash = path.lastIndexOf('/', fileSlash-1);
+        int versionSlash = path.lastIndexOf('/', fileSlash - 1);
         if (versionSlash == -1) {
             return null;
         }
-        int artifactSlash = path.lastIndexOf('/', versionSlash-1);
+        int artifactSlash = path.lastIndexOf('/', versionSlash - 1);
         if (artifactSlash == -1) {
             return null;
         }
         String groupId = path.substring(0, artifactSlash).replace('/', '.');
-        String artifactId = path.substring(artifactSlash+1, versionSlash);
-        String version = path.substring(versionSlash+1, fileSlash);
-        String file = path.substring(fileSlash+1);
+        String artifactId = path.substring(artifactSlash + 1, versionSlash);
+        String version = path.substring(versionSlash + 1, fileSlash);
+        String file = path.substring(fileSlash + 1);
         if (!file.startsWith(artifactId + "-" + version)) {
             return null;
         }
-        String remainder = file.substring(artifactId.length() + version.length() + 1); // Either ".<type>" or "-<classifier>.<type>"
+        String remainder =
+                file.substring(
+                        artifactId.length()
+                                + version.length()
+                                + 1); // Either ".<type>" or "-<classifier>.<type>"
         if (remainder.length() == 0) {
             return null;
         }
@@ -92,7 +100,7 @@ final class ResolverProxyServlet extends HttpServlet {
                 return null;
             }
             classifier = remainder.substring(1, dot);
-            extension = remainder.substring(dot+1);
+            extension = remainder.substring(dot + 1);
         } else if (remainder.charAt(0) == '.') {
             classifier = null;
             extension = remainder.substring(1);
@@ -109,17 +117,19 @@ final class ResolverProxyServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         process(request, response, false);
     }
 
-    
     @Override
-    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         process(request, response, true);
     }
 
-    private void process(HttpServletRequest request, HttpServletResponse response, boolean head) throws ServletException, IOException {
+    private void process(HttpServletRequest request, HttpServletResponse response, boolean head)
+            throws ServletException, IOException {
         String path = request.getPathInfo();
         if (path != null && path.startsWith("/")) {
             try {
@@ -135,15 +145,16 @@ final class ResolverProxyServlet extends HttpServlet {
         }
     }
 
-    private void process(String path, HttpServletResponse response, boolean head) throws IOException, ServletException {
+    private void process(String path, HttpServletResponse response, boolean head)
+            throws IOException, ServletException {
         if (path.endsWith("/maven-metadata.xml")) {
             int fileSlash = path.lastIndexOf('/');
-            int artifactSlash = path.lastIndexOf('/', fileSlash-1);
+            int artifactSlash = path.lastIndexOf('/', fileSlash - 1);
             if (artifactSlash != -1) {
                 processMetadataRequest(
                         path,
                         path.substring(0, artifactSlash).replace('/', '.'),
-                        path.substring(artifactSlash+1, fileSlash),
+                        path.substring(artifactSlash + 1, fileSlash),
                         response,
                         head);
                 return;
@@ -155,7 +166,7 @@ final class ResolverProxyServlet extends HttpServlet {
                 return;
             }
         }
-        
+
         if (log.isDebugEnabled()) {
             log.debug(String.format("Returning 404 for %s", path));
         }
@@ -163,24 +174,33 @@ final class ResolverProxyServlet extends HttpServlet {
         return;
     }
 
-    private void processArtifactRequest(String path, DefaultArtifactCoordinate artifact, HttpServletResponse response, boolean head) throws IOException {
-        // Handle checksum files in a special way. ArtifactResolver would be able to resolve them for artifacts
-        // downloaded from a remote repository, but for artifacts from the reactor it will trigger an error. It
-        // may also do unnecessary attempts to download them from remote repositories.
+    private void processArtifactRequest(
+            String path,
+            DefaultArtifactCoordinate artifact,
+            HttpServletResponse response,
+            boolean head)
+            throws IOException {
+        // Handle checksum files in a special way. ArtifactResolver would be able to resolve them
+        // for artifacts downloaded from a remote repository, but for artifacts from the reactor it
+        // will trigger an error. It may also do unnecessary attempts to download them from remote
+        // repositories.
         String extension = artifact.getExtension();
         String checksumType = null;
         int idx = extension.lastIndexOf('.');
         if (idx != -1) {
-            String suffix = extension.substring(idx+1);
+            String suffix = extension.substring(idx + 1);
             if (suffix.equals("md5") || suffix.equals("sha1")) {
                 artifact.setExtension(extension.substring(0, idx));
                 checksumType = suffix;
             }
         }
-        
+
         File file;
         try {
-            file = resolver.resolveArtifact(session.getProjectBuildingRequest(), artifact).getArtifact().getFile();
+            file =
+                    resolver.resolveArtifact(session.getProjectBuildingRequest(), artifact)
+                            .getArtifact()
+                            .getFile();
         } catch (ArtifactResolverException ex) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("%s (%s) couldn't be resolved", path, artifact), ex);
@@ -188,9 +208,11 @@ final class ResolverProxyServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        
+
         if (checksumType != null) {
-            File checksumFile = new File(file.getParent(), String.format("%s.%s", file.getName(), checksumType));
+            File checksumFile =
+                    new File(
+                            file.getParent(), String.format("%s.%s", file.getName(), checksumType));
             if (checksumFile.exists()) {
                 // Just continue and send the existing checksum file.
                 file = checksumFile;
@@ -212,37 +234,55 @@ final class ResolverProxyServlet extends HttpServlet {
                 }
                 String checksum = Hex.encodeHexString(digest.digest(), false);
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("%s served by computing checksum of %s (%s): %s", path, file, artifact, checksum));
+                    log.debug(
+                            String.format(
+                                    "%s served by computing checksum of %s (%s): %s",
+                                    path, file, artifact, checksum));
                 }
                 response.getWriter().write(checksum);
                 return;
             }
         }
-        
+
         if (log.isDebugEnabled()) {
-            log.debug(String.format("%s (%s, checksumType=%s) resolved to %s", path, artifact, checksumType, file));
+            log.debug(
+                    String.format(
+                            "%s (%s, checksumType=%s) resolved to %s",
+                            path, artifact, checksumType, file));
         }
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             long size = raf.length();
             response.setContentLengthLong(size);
             if (!head) {
-                ((HttpOutput)response.getOutputStream()).sendContent(raf.getChannel().map(MapMode.READ_ONLY, 0, size));
+                ((HttpOutput) response.getOutputStream())
+                        .sendContent(raf.getChannel().map(MapMode.READ_ONLY, 0, size));
             }
         }
     }
 
-    private void processMetadataRequest(String path, String groupId, String artifactId, HttpServletResponse response, boolean head) throws IOException, ServletException {
+    private void processMetadataRequest(
+            String path,
+            String groupId,
+            String artifactId,
+            HttpServletResponse response,
+            boolean head)
+            throws IOException, ServletException {
         String key = Plugin.constructKey(groupId, artifactId);
-        Map<String,Plugin> pluginMap = pluginManagement.getPluginsAsMap();
+        Map<String, Plugin> pluginMap = pluginManagement.getPluginsAsMap();
         Plugin plugin = pluginMap.get(key);
         if (plugin != null) {
             String version = plugin.getVersion();
             if (log.isDebugEnabled()) {
-                log.debug(String.format("%s (%s) served by generating metadata for version %s", path, key, version));
+                log.debug(
+                        String.format(
+                                "%s (%s) served by generating metadata for version %s",
+                                path, key, version));
             }
             if (!head) {
                 try {
-                    XMLStreamWriter writer = XMLOutputFactory.newFactory().createXMLStreamWriter(response.getOutputStream());
+                    XMLStreamWriter writer =
+                            XMLOutputFactory.newFactory()
+                                    .createXMLStreamWriter(response.getOutputStream());
                     writer.writeStartDocument("utf-8", "1.0");
                     writer.writeStartElement("metadata");
                     writer.writeStartElement("groupId");
@@ -270,7 +310,10 @@ final class ResolverProxyServlet extends HttpServlet {
             }
         } else {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Returning 404 for %s: no pluginManagement for %s (available: %s)", path, key, pluginMap.keySet()));
+                log.debug(
+                        String.format(
+                                "Returning 404 for %s: no pluginManagement for %s (available: %s)",
+                                path, key, pluginMap.keySet()));
             }
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
