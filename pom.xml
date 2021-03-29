@@ -80,7 +80,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
-            <version>9.4.38.v20210224</version>
+            <version>9.4.39.v20210325</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
