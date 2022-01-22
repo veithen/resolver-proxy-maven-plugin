@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.github.veithen</groupId>
         <artifactId>parent</artifactId>
-        <version>36</version>
+        <version>37-SNAPSHOT</version>
     </parent>
 
     <groupId>com.github.veithen.maven</groupId>
@@ -52,6 +52,7 @@
     <properties>
         <github.repository>resolver-proxy-maven-plugin</github.repository>
         <javaVersion>1.8</javaVersion>
+        <project.build.outputTimestamp>2022-01-22T13:41:00Z</project.build.outputTimestamp>
         <maven.version>3.8.4</maven.version>
     </properties>
 
