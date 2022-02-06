@@ -66,6 +66,7 @@ public class StartMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}/it-repo", readonly = true)
     private File localRepositoryPath;
 
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         final Log log = getLog();
         Server server = new Server();
