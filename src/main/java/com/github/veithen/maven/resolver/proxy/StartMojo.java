@@ -21,6 +21,9 @@ package com.github.veithen.maven.resolver.proxy;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
 import javax.servlet.ServletException;
@@ -38,7 +41,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
-import org.apache.maven.shared.utils.io.FileUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -111,8 +113,9 @@ public class StartMojo extends AbstractMojo {
         Properties props = project.getProperties();
         props.setProperty("resolverProxyPort", String.valueOf(port));
         if (!props.containsKey("invoker.settingsFile")) {
-            try {
-                FileUtils.copyURLToFile(StartMojo.class.getResource("settings.xml"), settingsFile);
+            settingsFile.getParentFile().mkdirs();
+            try (InputStream in = StartMojo.class.getResourceAsStream("settings.xml")) {
+                Files.copy(in, settingsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException ex) {
                 throw new MojoExecutionException(
                         String.format("Failed to create %s: %s", settingsFile, ex.getMessage()),
