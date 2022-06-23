@@ -29,7 +29,7 @@
 
     <groupId>com.github.veithen.maven</groupId>
     <artifactId>resolver-proxy-maven-plugin</artifactId>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <url>https://github.com/veithen/resolver-proxy-maven-plugin</url>
@@ -51,7 +51,7 @@
 
     <properties>
         <github.repository>resolver-proxy-maven-plugin</github.repository>
-        <javaVersion>1.8</javaVersion>
+        <javaVersion>11</javaVersion>
         <project.build.outputTimestamp>2022-01-22T13:41:00Z</project.build.outputTimestamp>
         <maven.version>3.8.6</maven.version>
     </properties>
@@ -82,7 +82,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
-            <version>9.4.46.v20220331</version>
+            <version>11.0.11</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
