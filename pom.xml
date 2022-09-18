@@ -29,7 +29,7 @@
 
     <groupId>com.github.veithen.maven</groupId>
     <artifactId>resolver-proxy-maven-plugin</artifactId>
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.4.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <url>https://github.com/veithen/resolver-proxy-maven-plugin</url>
@@ -128,6 +128,10 @@
                                 <goal>verify</goal>
                             </goals>
                             <debug>true</debug>
+                            <pomExcludes>
+                                <!-- TODO: remove when plugin has been released -->
+                                <pomExclude>version-range/pom.xml</pomExclude>
+                            </pomExcludes>
                         </configuration>
                     </execution>
                 </executions>

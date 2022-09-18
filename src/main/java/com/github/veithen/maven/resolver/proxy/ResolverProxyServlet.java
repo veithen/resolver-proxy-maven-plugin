@@ -26,7 +26,10 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel.MapMode;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -37,6 +40,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginManagement;
@@ -44,21 +48,30 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.transfer.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolverException;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.resolution.VersionRangeRequest;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
+import org.eclipse.aether.resolution.VersionRangeResult;
+import org.eclipse.aether.version.Version;
 import org.eclipse.jetty.server.HttpOutput;
 
 @SuppressWarnings("serial")
 final class ResolverProxyServlet extends HttpServlet {
     private final Log log;
+    private final RepositorySystem repositorySystem;
     private final ArtifactResolver resolver;
     private final MavenSession session;
     private final PluginManagement pluginManagement;
 
     ResolverProxyServlet(
             Log log,
+            RepositorySystem repositorySystem,
             ArtifactResolver resolver,
             MavenSession session,
             PluginManagement pluginManagement) {
         this.log = log;
+        this.repositorySystem = repositorySystem;
         this.resolver = resolver;
         this.session = session;
         this.pluginManagement = pluginManagement;
@@ -267,6 +280,8 @@ final class ResolverProxyServlet extends HttpServlet {
             HttpServletResponse response,
             boolean head)
             throws IOException, ServletException {
+        String latestVersion;
+        List<String> versions;
         String key = Plugin.constructKey(groupId, artifactId);
         Map<String, Plugin> pluginMap = pluginManagement.getPluginsAsMap();
         Plugin plugin = pluginMap.get(key);
@@ -278,44 +293,63 @@ final class ResolverProxyServlet extends HttpServlet {
                                 "%s (%s) served by generating metadata for version %s",
                                 path, key, version));
             }
-            if (!head) {
-                try {
-                    XMLStreamWriter writer =
-                            XMLOutputFactory.newFactory()
-                                    .createXMLStreamWriter(response.getOutputStream());
-                    writer.writeStartDocument("utf-8", "1.0");
-                    writer.writeStartElement("metadata");
-                    writer.writeStartElement("groupId");
-                    writer.writeCharacters(groupId);
-                    writer.writeEndElement();
-                    writer.writeStartElement("artifactId");
-                    writer.writeCharacters(artifactId);
-                    writer.writeEndElement();
-                    writer.writeStartElement("versioning");
-                    writer.writeStartElement("latest");
-                    writer.writeCharacters(version);
-                    writer.writeEndElement();
-                    writer.writeStartElement("versions");
+            latestVersion = version;
+            versions = Collections.singletonList(version);
+        } else {
+            try {
+                VersionRangeResult result =
+                        repositorySystem.resolveVersionRange(
+                                session.getRepositorySession(),
+                                new VersionRangeRequest(
+                                        new DefaultArtifact(groupId, artifactId, "", "pom", "[0,)"),
+                                        RepositoryUtils.toRepos(
+                                                session.getProjectBuildingRequest()
+                                                        .getRemoteRepositories()),
+                                        null));
+                if (result.getVersions().isEmpty()) {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    return;
+                }
+                latestVersion = result.getHighestVersion().toString();
+                versions =
+                        result.getVersions().stream()
+                                .map(Version::toString)
+                                .collect(Collectors.toList());
+            } catch (VersionRangeResolutionException ex) {
+                throw new ServletException(ex);
+            }
+        }
+        if (!head) {
+            try {
+                XMLStreamWriter writer =
+                        XMLOutputFactory.newFactory()
+                                .createXMLStreamWriter(response.getOutputStream());
+                writer.writeStartDocument("utf-8", "1.0");
+                writer.writeStartElement("metadata");
+                writer.writeStartElement("groupId");
+                writer.writeCharacters(groupId);
+                writer.writeEndElement();
+                writer.writeStartElement("artifactId");
+                writer.writeCharacters(artifactId);
+                writer.writeEndElement();
+                writer.writeStartElement("versioning");
+                writer.writeStartElement("latest");
+                writer.writeCharacters(latestVersion);
+                writer.writeEndElement();
+                writer.writeStartElement("versions");
+                for (String version : versions) {
                     writer.writeStartElement("version");
                     writer.writeCharacters(version);
                     writer.writeEndElement();
-                    writer.writeEndElement();
-                    writer.writeEndElement();
-                    writer.writeEndElement();
-                    writer.writeEndDocument();
-                    writer.flush();
-                } catch (XMLStreamException ex) {
-                    throw new ServletException(ex);
                 }
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndDocument();
+                writer.flush();
+            } catch (XMLStreamException ex) {
+                throw new ServletException(ex);
             }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug(
-                        String.format(
-                                "Returning 404 for %s: no pluginManagement for %s (available: %s)",
-                                path, key, pluginMap.keySet()));
-            }
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }
