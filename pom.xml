@@ -106,7 +106,7 @@
             <plugin>
                 <groupId>com.github.veithen.maven</groupId>
                 <artifactId>resolver-proxy-maven-plugin</artifactId>
-                <version>0.3.0</version>
+                <version>0.4.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -128,10 +128,6 @@
                                 <goal>verify</goal>
                             </goals>
                             <debug>true</debug>
-                            <pomExcludes>
-                                <!-- TODO: remove when plugin has been released -->
-                                <pomExclude>version-range/pom.xml</pomExclude>
-                            </pomExcludes>
                         </configuration>
                     </execution>
                 </executions>
