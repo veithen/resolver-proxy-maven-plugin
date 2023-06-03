@@ -18,11 +18,13 @@
  * #L%
  */
 import java.io.*;
-import com.google.common.truth.*;
 
 BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(basedir, "build.log")), "utf-8"));
 String line;
 while ((line = in.readLine()) != null) {
-    Truth.assertThat(line).doesNotContain("[WARNING]");
+    if (line.contains("[WARNING]")) {
+        System.out.println("Found warning: " + line);
+        return false;
+    }
 }
 in.close();
