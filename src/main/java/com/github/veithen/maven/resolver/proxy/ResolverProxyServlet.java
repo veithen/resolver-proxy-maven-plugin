@@ -54,7 +54,7 @@ import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
-import org.eclipse.jetty.server.HttpOutput;
+import org.eclipse.jetty.ee10.servlet.HttpOutput;
 
 @SuppressWarnings("serial")
 final class ResolverProxyServlet extends HttpServlet {

@@ -90,9 +90,9 @@
             <version>0.13.1</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-            <version>11.0.15</version>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-servlet</artifactId>
+            <version>12.0.0</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>

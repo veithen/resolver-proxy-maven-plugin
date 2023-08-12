@@ -26,10 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -43,11 +39,13 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ErrorHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 
 @Mojo(name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST, threadSafe = true)
 public class StartMojo extends AbstractMojo {
@@ -79,7 +77,7 @@ public class StartMojo extends AbstractMojo {
             connector.setPort(resolverProxyPort);
         }
         server.addConnector(connector);
-        ServletContextHandler context = new ServletContextHandler(server, "/");
+        ServletContextHandler context = new ServletContextHandler("/");
         ServletHolder servlet =
                 new ServletHolder(
                         new ResolverProxyServlet(
@@ -92,20 +90,16 @@ public class StartMojo extends AbstractMojo {
         context.setErrorHandler(
                 new ErrorHandler() {
                     @Override
-                    public void handle(
-                            String target,
-                            Request baseRequest,
-                            HttpServletRequest request,
-                            HttpServletResponse response)
-                            throws IOException, ServletException {
+                    public boolean handle(Request request, Response response, Callback callback) {
                         Throwable exception =
                                 (Throwable) request.getAttribute("javax.servlet.error.exception");
                         if (exception != null) {
                             log.error("An error occurred in the resolver proxy", exception);
                         }
-                        super.handle(target, baseRequest, request, response);
+                        return super.handle(request, response, callback);
                     }
                 });
+        server.setHandler(context);
         try {
             server.start();
         } catch (Exception ex) {
