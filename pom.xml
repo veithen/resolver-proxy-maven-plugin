@@ -27,7 +27,7 @@
 
     <groupId>com.github.veithen.maven</groupId>
     <artifactId>resolver-proxy-maven-plugin</artifactId>
-    <version>0.5.0</version>
+    <version>0.5.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <url>https://github.com/veithen/resolver-proxy-maven-plugin</url>
@@ -44,13 +44,13 @@
         <url>https://github.com/veithen/resolver-proxy-maven-plugin/tree/master</url>
         <connection>scm:git:http://github.com/veithen/resolver-proxy-maven-plugin.git</connection>
         <developerConnection>scm:git:https://github.com/veithen/resolver-proxy-maven-plugin.git</developerConnection>
-        <tag>0.5.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
         <github.repository>resolver-proxy-maven-plugin</github.repository>
         <javaVersion>17</javaVersion>
-        <project.build.outputTimestamp>2023-08-12T14:26:42Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2023-08-12T14:27:20Z</project.build.outputTimestamp>
         <maven.version>3.9.4</maven.version>
     </properties>
 
