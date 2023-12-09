@@ -90,7 +90,8 @@ public class StartMojo extends AbstractMojo {
         context.setErrorHandler(
                 new ErrorHandler() {
                     @Override
-                    public boolean handle(Request request, Response response, Callback callback) {
+                    public boolean handle(Request request, Response response, Callback callback)
+                            throws Exception {
                         Throwable exception =
                                 (Throwable) request.getAttribute("javax.servlet.error.exception");
                         if (exception != null) {
