@@ -28,7 +28,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.ServletException;
@@ -283,8 +282,8 @@ final class ResolverProxyServlet extends HttpServlet {
         String latestVersion;
         List<String> versions;
         String key = Plugin.constructKey(groupId, artifactId);
-        Map<String, Plugin> pluginMap = pluginManagement.getPluginsAsMap();
-        Plugin plugin = pluginMap.get(key);
+        Plugin plugin =
+                pluginManagement == null ? null : pluginManagement.getPluginsAsMap().get(key);
         if (plugin != null) {
             String version = plugin.getVersion();
             if (log.isDebugEnabled()) {
