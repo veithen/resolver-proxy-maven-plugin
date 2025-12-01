@@ -280,15 +280,17 @@ final class ResolverProxyServlet extends HttpServlet {
             versions = Collections.singletonList(version);
         } else {
             try {
+                VersionRangeRequest request =
+                        new VersionRangeRequest(
+                                new DefaultArtifact(groupId, artifactId, "", "pom", "[0,)"),
+                                RepositoryUtils.toRepos(
+                                        session.getProjectBuildingRequest()
+                                                .getRemoteRepositories()),
+                                null);
                 VersionRangeResult result =
                         repositorySystem.resolveVersionRange(
-                                session.getRepositorySession(),
-                                new VersionRangeRequest(
-                                        new DefaultArtifact(groupId, artifactId, "", "pom", "[0,)"),
-                                        RepositoryUtils.toRepos(
-                                                session.getProjectBuildingRequest()
-                                                        .getRemoteRepositories()),
-                                        null));
+                                session.getRepositorySession(), request);
+                log.debug("Resolved version range {}: {}", request, result.getVersions());
                 if (result.getVersions().isEmpty()) {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     return;
