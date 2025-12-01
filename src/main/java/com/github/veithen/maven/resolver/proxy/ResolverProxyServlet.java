@@ -43,7 +43,6 @@ import org.apache.maven.RepositoryUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginManagement;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.transfer.artifact.DefaultArtifactCoordinate;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolverException;
@@ -54,22 +53,23 @@ import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.version.Version;
 import org.eclipse.jetty.ee10.servlet.HttpOutput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("serial")
 final class ResolverProxyServlet extends HttpServlet {
-    private final Log log;
+    private static final Logger log = LoggerFactory.getLogger(ResolverProxyServlet.class);
+
     private final RepositorySystem repositorySystem;
     private final ArtifactResolver resolver;
     private final MavenSession session;
     private final PluginManagement pluginManagement;
 
     ResolverProxyServlet(
-            Log log,
             RepositorySystem repositorySystem,
             ArtifactResolver resolver,
             MavenSession session,
             PluginManagement pluginManagement) {
-        this.log = log;
         this.repositorySystem = repositorySystem;
         this.resolver = resolver;
         this.session = session;
@@ -147,13 +147,11 @@ final class ResolverProxyServlet extends HttpServlet {
             try {
                 process(path.substring(1), response, head);
             } catch (ServletException | IOException ex) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Error processing request for %s", path), ex);
-                }
+                log.debug("Error processing request for {}", path, ex);
                 throw ex;
             }
         } else {
-            log.error(String.format("Expected pathInfo starting with '/'; was: %s", path));
+            log.error("Expected pathInfo starting with '/'; was: {}", path);
         }
     }
 
@@ -179,9 +177,7 @@ final class ResolverProxyServlet extends HttpServlet {
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Returning 404 for %s", path));
-        }
+        log.debug("Returning 404 for {}", path);
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         return;
     }
@@ -214,9 +210,7 @@ final class ResolverProxyServlet extends HttpServlet {
                             .getArtifact()
                             .getFile();
         } catch (ArtifactResolverException ex) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("%s (%s) couldn't be resolved", path, artifact), ex);
-            }
+            log.debug("{} ({}) couldn't be resolved", path, artifact, ex);
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
@@ -233,7 +227,7 @@ final class ResolverProxyServlet extends HttpServlet {
                 try {
                     digest = MessageDigest.getInstance(checksumType);
                 } catch (NoSuchAlgorithmException ex) {
-                    log.error(ex);
+                    log.error("Could not create message digest", ex);
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     return;
                 }
@@ -245,23 +239,18 @@ final class ResolverProxyServlet extends HttpServlet {
                     }
                 }
                 String checksum = Hex.encodeHexString(digest.digest(), false);
-                if (log.isDebugEnabled()) {
-                    log.debug(
-                            String.format(
-                                    "%s served by computing checksum of %s (%s): %s",
-                                    path, file, artifact, checksum));
-                }
+                log.debug(
+                        "{} served by computing checksum of {} ({}): {}",
+                        path,
+                        file,
+                        artifact,
+                        checksum);
                 response.getWriter().write(checksum);
                 return;
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(
-                    String.format(
-                            "%s (%s, checksumType=%s) resolved to %s",
-                            path, artifact, checksumType, file));
-        }
+        log.debug("{} ({}, checksumType={}) resolved to {}", path, artifact, checksumType, file);
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             long size = raf.length();
             response.setContentLengthLong(size);
@@ -286,12 +275,7 @@ final class ResolverProxyServlet extends HttpServlet {
                 pluginManagement == null ? null : pluginManagement.getPluginsAsMap().get(key);
         if (plugin != null) {
             String version = plugin.getVersion();
-            if (log.isDebugEnabled()) {
-                log.debug(
-                        String.format(
-                                "%s (%s) served by generating metadata for version %s",
-                                path, key, version));
-            }
+            log.debug("{} ({}) served by generating metadata for version {}", path, key, version);
             latestVersion = version;
             versions = Collections.singletonList(version);
         } else {

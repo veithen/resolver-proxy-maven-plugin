@@ -25,9 +25,13 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.eclipse.jetty.server.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Mojo(name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST, threadSafe = true)
 public class StopMojo extends AbstractMojo {
+    private static final Logger log = LoggerFactory.getLogger(StopMojo.class);
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         Server server = (Server) getPluginContext().get(Constants.SERVER_KEY);
@@ -39,7 +43,7 @@ public class StopMojo extends AbstractMojo {
                         String.format("Failed to stop embedded Jetty server: %s", ex.getMessage()),
                         ex);
             }
-            getLog().info("Resolver proxy stopped");
+            log.info("Resolver proxy stopped");
         }
     }
 }

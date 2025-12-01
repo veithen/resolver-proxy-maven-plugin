@@ -30,7 +30,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -44,11 +43,15 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 
 @Mojo(name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST, threadSafe = true)
 public class StartMojo extends AbstractMojo {
+    private static final Logger log = LoggerFactory.getLogger(StartMojo.class);
+
     @Component private RepositorySystem repositorySystem;
     @Component private ArtifactResolver resolver;
 
@@ -70,7 +73,6 @@ public class StartMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final Log log = getLog();
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         if (resolverProxyPort != -1) {
@@ -81,7 +83,6 @@ public class StartMojo extends AbstractMojo {
         ServletHolder servlet =
                 new ServletHolder(
                         new ResolverProxyServlet(
-                                log,
                                 repositorySystem,
                                 resolver,
                                 session,
@@ -109,7 +110,7 @@ public class StartMojo extends AbstractMojo {
                     ex);
         }
         int port = connector.getLocalPort();
-        log.info(String.format("Resolver proxy started on port %s", port));
+        log.info("Resolver proxy started on port {}", port);
 
         Properties props = project.getProperties();
         props.setProperty("resolverProxyPort", String.valueOf(port));
