@@ -139,6 +139,7 @@
                                 <goal>verify</goal>
                             </goals>
                             <debug>true</debug>
+                            <mavenOpts>${argLine} -Dorg.slf4j.simpleLogger.showLogName=true</mavenOpts>
                         </configuration>
                     </execution>
                 </executions>
