@@ -22,8 +22,10 @@ package com.github.veithen.maven.resolver.proxy;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel.MapMode;
+import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
@@ -39,6 +41,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.RepositoryUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
@@ -157,14 +160,25 @@ final class ResolverProxyServlet extends HttpServlet {
 
     private void process(String path, HttpServletResponse response, boolean head)
             throws IOException, ServletException {
+        String orgPath = path;
+        String checksumType = null;
+        int idx = path.lastIndexOf('.');
+        if (idx != -1) {
+            String suffix = path.substring(idx + 1);
+            if (suffix.equals("md5") || suffix.equals("sha1")) {
+                path = path.substring(0, idx);
+                checksumType = suffix;
+            }
+        }
         if (path.endsWith("/maven-metadata.xml")) {
             int fileSlash = path.lastIndexOf('/');
             int artifactSlash = path.lastIndexOf('/', fileSlash - 1);
             if (artifactSlash != -1) {
                 processMetadataRequest(
-                        path,
+                        orgPath,
                         path.substring(0, artifactSlash).replace('/', '.'),
                         path.substring(artifactSlash + 1, fileSlash),
+                        checksumType,
                         response,
                         head);
                 return;
@@ -172,7 +186,7 @@ final class ResolverProxyServlet extends HttpServlet {
         } else {
             DefaultArtifactCoordinate artifact = parseArtifactRequest(path);
             if (artifact != null) {
-                processArtifactRequest(path, artifact, response, head);
+                processArtifactRequest(orgPath, artifact, checksumType, response, head);
                 return;
             }
         }
@@ -185,24 +199,14 @@ final class ResolverProxyServlet extends HttpServlet {
     private void processArtifactRequest(
             String path,
             DefaultArtifactCoordinate artifact,
+            String checksumType,
             HttpServletResponse response,
             boolean head)
             throws IOException {
-        // Handle checksum files in a special way. ArtifactResolver would be able to resolve them
-        // for artifacts downloaded from a remote repository, but for artifacts from the reactor it
-        // will trigger an error. It may also do unnecessary attempts to download them from remote
-        // repositories.
-        String extension = artifact.getExtension();
-        String checksumType = null;
-        int idx = extension.lastIndexOf('.');
-        if (idx != -1) {
-            String suffix = extension.substring(idx + 1);
-            if (suffix.equals("md5") || suffix.equals("sha1")) {
-                artifact.setExtension(extension.substring(0, idx));
-                checksumType = suffix;
-            }
-        }
-
+        // Note that we don't attempt to resolve checksum files. ArtifactResolver would be able to
+        // do that for artifacts downloaded from a remote repository, but for artifacts from the
+        // reactor it will trigger an error. It may also do unnecessary attempts to download them
+        // from remote repositories.
         File file;
         try {
             file =
@@ -265,6 +269,7 @@ final class ResolverProxyServlet extends HttpServlet {
             String path,
             String groupId,
             String artifactId,
+            String checksumType,
             HttpServletResponse response,
             boolean head)
             throws IOException, ServletException {
@@ -305,10 +310,23 @@ final class ResolverProxyServlet extends HttpServlet {
             }
         }
         if (!head) {
+            MessageDigest digest;
+            OutputStream out;
+            if (checksumType == null) {
+                digest = null;
+                out = response.getOutputStream();
+            } else {
+                try {
+                    digest = MessageDigest.getInstance(checksumType);
+                } catch (NoSuchAlgorithmException ex) {
+                    log.error("Could not create message digest", ex);
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    return;
+                }
+                out = new DigestOutputStream(NullOutputStream.INSTANCE, digest);
+            }
             try {
-                XMLStreamWriter writer =
-                        XMLOutputFactory.newFactory()
-                                .createXMLStreamWriter(response.getOutputStream());
+                XMLStreamWriter writer = XMLOutputFactory.newFactory().createXMLStreamWriter(out);
                 writer.writeStartDocument("utf-8", "1.0");
                 writer.writeStartElement("metadata");
                 writer.writeStartElement("groupId");
@@ -334,6 +352,9 @@ final class ResolverProxyServlet extends HttpServlet {
                 writer.flush();
             } catch (XMLStreamException ex) {
                 throw new ServletException(ex);
+            }
+            if (digest != null) {
+                response.getWriter().write(Hex.encodeHexString(digest.digest(), false));
             }
         }
     }
